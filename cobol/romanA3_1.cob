@@ -1,0 +1,152 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. ROMANNUMERALS.
+ENVIRONMENT DIVISION.
+INPUT-OUTPUT SECTION.
+FILE-CONTROL.
+    SELECT STANDARD-INPUT ASSIGN TO KEYBOARD.
+    SELECT STANDARD-OUTPUT ASSIGN TO DISPLAY.
+
+DATA DIVISION.
+FILE SECTION.
+FD STANDARD-INPUT.
+    01 STDIN-RECORD   PICTURE X(80).
+FD STANDARD-OUTPUT.
+    01 STDOUT-RECORD  PICTURE X(80).
+
+*>  DECLARATIONS
+WORKING-STORAGE SECTION.
+*> personal declarations
+77 I   PICTURE S99 USAGE IS COMPUTATIONAL.
+77 X   PICTURE S99 USAGE IS COMPUTATIONAL.
+77 SIZE-DATA PICTURE S99 USAGE IS COMPUTATIONAL.
+77 USER-DATA PICTURE X(35) VALUE SPACES.
+*> pre defined data before refactoring
+77 N PICTURE S99 USAGE IS COMPUTATIONAL.
+77 TEMP PICTURE S9(8) USAGE IS COMPUTATIONAL.
+77 RET PICTURE S9 USAGE IS COMPUTATIONAL-3.
+01 ARRAY-AREA.
+    02 R PICTURE X(1) OCCURS 30 TIMES.
+01 INPUT-AREA.
+    02 IN-R PICTURE X(1).
+    02 FILLER PICTURE X(79).
+*>  saved print lines
+01 TITLE-LINE.
+    02 FILLER PICTURE X(11) VALUE SPACES.
+    02 FILLER PICTURE X(24) VALUE 'ROMAN NUMBER EQUIVALENTS'.
+01 UNDERLINE-1.
+    02 FILLER PICTURE X(45) VALUE
+    ' --------------------------------------------'.
+01 COL-HEADS.
+    02 FILLER PICTURE X(9) VALUE SPACES.
+    02 FILLER PICTURE X(12) VALUE 'ROMAN NUMBER'.
+    02 FILLER PICTURE X(13) VALUE SPACES.
+    02 FILLER PICTURE X(11) VALUE 'DEC. EQUIV.'.
+01 UNDERLINE-2.
+    02 FILLER PICTURE X(45) VALUE
+    ' ------------------------------
+    -----------'.
+01 PRINT-LINE.
+    02 FILLER PICTURE X VALUE SPACE.
+    02 OUT-R PICTURE X(30).
+    02 FILLER PICTURE X(3) VALUE SPACES.
+    02 OUT-EQ PICTURE Z(9).
+
+PROCEDURE DIVISION.
+*>  start up log
+    DISPLAY' '.
+    OPEN INPUT STANDARD-INPUT, OUTPUT STANDARD-OUTPUT.
+    WRITE STDOUT-RECORD FROM TITLE-LINE AFTER ADVANCING 0 LINES.
+    WRITE STDOUT-RECORD FROM UNDERLINE-1 AFTER ADVANCING 1 LINE.
+    WRITE STDOUT-RECORD FROM COL-HEADS AFTER ADVANCING 1 LINE.
+    WRITE STDOUT-RECORD FROM UNDERLINE-2 AFTER ADVANCING 1 LINE.
+
+*>  type of data
+    DISPLAY' '.
+    DISPLAY "Enter f for file, n for number, or q to quit".
+    READ STANDARD-INPUT INTO USER-DATA.
+
+*>  seeing what the user wants to do
+    IF USER-DATA IS EQUAL TO 'q' OR USER-DATA IS EQUAL TO 'Q'
+      PERFORM B3 THRU END-B3
+*>  calls the input handler function
+    ELSE IF USER-DATA IS EQUAL TO 'N' OR USER-DATA IS EQUAL TO 'n'
+      PERFORM L1 THRU END-L1
+*>  working with files
+    ELSE IF USER-DATA IS EQUAL TO 'F' OR USER-DATA IS EQUAL TO 'f'
+      DISPLAY"File under development"
+      PERFORM B3 THRU END-B3
+    END-IF.
+
+*>  should never happen
+    PERFORM B3 THRU END-B3.
+
+*>  beings the process of getting user data
+*>  resets most values
+L1.
+    MOVE 0 TO SIZE-DATA.
+    MOVE SPACES TO ARRAY-AREA.
+    MOVE SPACES TO USER-DATA.
+    PERFORM L2 THRU END-L2.
+END-L1.
+
+*>  gets the user DATA
+*>  get the SIZE
+L2.
+    READ STANDARD-INPUT INTO USER-DATA AT END PERFORM B3.
+*>  the inital string is of length 35 filled with spaces
+*>  counting all the remaining spaces
+    MOVE 0 TO I.
+*>  tallying counts the total number of spaces remaining
+    INSPECT USER-DATA TALLYING I FOR ALL SPACES.
+*>  display USER-DATA.
+*>  counting the length
+    COMPUTE SIZE-DATA = 35 - I.
+*>  display SIZE-DATA.
+    PERFORM STRING-MANUPILATION THRU END-STRING-MANUPILATION VARYING X FROM 1 BY 1
+      UNTIL X IS GREATER THAN SIZE-DATA.
+
+*>  looks for the final space and move on to the next step
+    IF IN-R IS NOT EQUAL TO SPACE
+      PERFORM L2 THRU END-L2
+    END-IF.
+    
+    *>  recursive because there the user input is greater then 1 in size
+    PERFORM B1 THRU END-B1.
+
+END-L2.
+
+STRING-MANUPILATION.
+*>  manipulates the string to act like a char
+*>  sends data over 1 at a time if
+*>  allows the program to handle a string over instead of one char at a time
+    MOVE USER-DATA(X:X) TO R(X).
+*>  display R(X).
+END-STRING-MANUPILATION.
+
+*>  send to conv and computes the DATA
+B1.
+    CALL "conv" USING ARRAY-AREA, SIZE-DATA, RET, TEMP.
+    IF RET EQUALS 1 THEN
+      PERFORM B2 THRU END-B2
+*>  user wants to quit after initally press n or f
+    ELSE IF RET EQUALS 3 THEN
+      DISPLAY 'Bye Bye'
+      PERFORM B3 THRU END-B3
+    ELSE IF RET EQUALS 2 THEN
+      PERFORM L1 THRU END-L1
+    END-IF.
+END-B1.
+
+*>  displays the final number
+B2.
+    MOVE TEMP TO OUT-EQ. MOVE ARRAY-AREA TO OUT-R.
+    WRITE STDOUT-RECORD FROM PRINT-LINE AFTER ADVANCING 1 LINE.
+    DISPLAY' '.
+    PERFORM L1 THRU END-L1.
+END-B2.
+
+*> ends the program
+B3.
+    CLOSE STANDARD-INPUT, STANDARD-OUTPUT.
+    STOP RUN.
+END-B3.
